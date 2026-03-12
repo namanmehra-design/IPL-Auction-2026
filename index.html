@@ -27,7 +27,7 @@
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); padding: 25px; }
         
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; padding: 10px; justify-content: center; flex-wrap: wrap; }
-        .nav-tabs button { flex: 1; min-width: 120px; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid transparent; padding: 12px 15px; border-radius: 8px; font-weight: 600; transition: all 0.2s; cursor: pointer; font-size: 0.9rem; }
+        .nav-tabs button { flex: 1; min-width: 100px; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid transparent; padding: 12px 10px; border-radius: 8px; font-weight: 600; transition: all 0.2s; cursor: pointer; font-size: 0.9rem; }
         .nav-tabs button.active { background: var(--cream); color: #0f172a; box-shadow: 0 4px 15px rgba(245, 230, 204, 0.3); }
 
         .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
@@ -70,7 +70,7 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem;}
         th { color: var(--cream); background: rgba(0,0,0,0.3); white-space: nowrap; }
 
-        .alert { color: white; font-weight: 600; padding: 15px; background: var(--danger); border-radius: 8px; display: none; margin-top: 15px; text-align: center; }
+        .alert { color: white; font-weight: 600; padding: 15px; background: var(--danger); border-radius: 8px; display: none; margin-top: 15px; text-align: center; z-index: 1000; position: relative;}
         .overseas-badge { background: rgba(245, 230, 204, 0.15); color: var(--cream); border: 1px solid var(--cream); padding: 2px 6px; border-radius: 8px; font-size: 0.7em; }
 
         .live-indicator { display: inline-block; width: 10px; height: 10px; background: var(--success); border-radius: 50%; margin-left: 10px; animation: pulse 2s infinite; }
@@ -90,15 +90,18 @@
 
     <h1>IPL Mega Auction <span class="live-indicator" id="connectionDot" style="background: red;"></span></h1>
 
-    <div class="nav-tabs glass-panel" id="navTabs" style="display: none;">
-        <button id="btn-auction" class="active" onclick="window.switchTab('auction')">🔨 Auction</button>
+    <div class="nav-tabs glass-panel" id="navTabs">
+        <button id="btn-setup" class="active" onclick="window.switchTab('setup')">⚙️ Setup</button>
+        <button id="btn-auction" onclick="window.switchTab('auction')">🔨 Auction</button>
         <button id="btn-teams" onclick="window.switchTab('teams')">📋 Purses</button>
         <button id="btn-roster" onclick="window.switchTab('roster')">📊 Ledger</button>
     </div>
 
+    <div id="globalAlert" class="alert"></div>
+
     <div id="setup-tab" class="tab-content glass-panel active">
         <h2>Auction Setup <span style="font-size: 0.5em; color: var(--danger);">(Admin Only)</span></h2>
-        <p style="color: var(--text-muted); font-size: 0.9em;">Clicking this will reset the entire database for all connected users.</p>
+        <p style="color: var(--warning); font-size: 0.9em; margin-bottom: 20px;">⚠️ Warning: Clicking "Initialize" will erase all current auction data and start fresh for everyone.</p>
         <div class="setup-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div class="form-group">
                 <label>Teams (Max 10):</label>
@@ -115,7 +118,7 @@
         </div>
         
         <div id="teamNamesContainer" style="margin-top: 10px;"></div>
-        <button class="primary-btn" onclick="window.startAuction()" style="margin-top: 20px;">Initialize LIVE Database</button>
+        <button class="primary-btn" onclick="window.startAuction()" style="margin-top: 20px;">Initialize / Reset LIVE Database</button>
     </div>
 
     <div id="auction-tab" class="tab-content glass-panel">
@@ -149,8 +152,6 @@
             </div>
         </div>
         
-        <div id="auctionAlert" class="alert"></div>
-
         <button class="primary-btn" onclick="window.pullRandomPlayer()" style="margin-top: 25px; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border);">🎲 Bring Up Random Player</button>
     </div>
 
@@ -187,7 +188,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDacQ47RW-LXCx_FEvGW933q5pEEWnW4Fw",
             authDomain: "ipl-2026-auction.firebaseapp.com",
-            databaseURL: "https://ipl-auction-26-default-rtdb.firebaseio.com/", // <-- YOUR NEW LINK IS HERE!
+            databaseURL: "https://ipl-auction-26-default-rtdb.firebaseio.com/",
             projectId: "ipl-2026-auction",
             storageBucket: "ipl-2026-auction.firebasestorage.app",
             messagingSenderId: "616761866734",
@@ -201,7 +202,6 @@
         // Indicate connection established
         document.getElementById('connectionDot').style.background = 'var(--success)';
 
-        // Raw Player Data
         const rawData = [
             {n:"Ruturaj Gaikwad", r:"Batter", o:false}, {n:"Ayush Mhatre", r:"Batter", o:false}, {n:"Dewald Brevis", r:"Batter", o:true}, {n:"MS Dhoni", r:"Wicketkeeper", o:false}, {n:"Urvil Patel", r:"Wicketkeeper", o:false}, {n:"Shivam Dube", r:"All-Rounder", o:false}, {n:"Jamie Overton", r:"All-Rounder", o:true}, {n:"Ramakrishna Ghosh", r:"Bowler", o:false}, {n:"Noor Ahmad", r:"Bowler", o:true}, {n:"Khaleel Ahmed", r:"Bowler", o:false}, {n:"Anshul Kamboj", r:"All-Rounder", o:false}, {n:"Gurjapneet Singh", r:"Bowler", o:false}, {n:"Nathan Ellis", r:"Bowler", o:true}, {n:"Shreyas Gopal", r:"Bowler", o:false}, {n:"Mukesh Choudhary", r:"Bowler", o:false}, {n:"Sanju Samson", r:"Wicketkeeper", o:false}, {n:"Akeal Hosein", r:"Bowler", o:true}, {n:"Prashant Veer", r:"All-Rounder", o:false}, {n:"Kartik Sharma", r:"Batter", o:false}, {n:"Matthew Short", r:"All-Rounder", o:true}, {n:"Aman Khan", r:"All-Rounder", o:false}, {n:"Sarfaraz Khan", r:"Batter", o:false}, {n:"Matt Henry", r:"Bowler", o:true}, {n:"Rahul Chahar", r:"Bowler", o:false}, {n:"Zak Foulkes", r:"All-Rounder", o:true},
             {n:"Rohit Sharma", r:"Batter", o:false}, {n:"Suryakumar Yadav", r:"Batter", o:false}, {n:"Tilak Varma", r:"Batter", o:false}, {n:"Robin Minz", r:"Wicketkeeper", o:false}, {n:"Ryan Rickelton", r:"Wicketkeeper", o:true}, {n:"Hardik Pandya", r:"All-Rounder", o:false}, {n:"Naman Dhir", r:"All-Rounder", o:false}, {n:"Mitchell Santner", r:"All-Rounder", o:true}, {n:"Will Jacks", r:"All-Rounder", o:true}, {n:"Corbin Bosch", r:"All-Rounder", o:true}, {n:"Raj Bawa", r:"All-Rounder", o:false}, {n:"Trent Boult", r:"Bowler", o:true}, {n:"Jasprit Bumrah", r:"Bowler", o:false}, {n:"Deepak Chahar", r:"Bowler", o:false}, {n:"Ashwani Kumar", r:"Bowler", o:false}, {n:"Raghu Sharma", r:"Bowler", o:false}, {n:"AM Ghazanfar", r:"Bowler", o:true}, {n:"Shardul Thakur", r:"All-Rounder", o:false}, {n:"Sherfane Rutherford", r:"Batter", o:true}, {n:"Mayank Markande", r:"Bowler", o:false}, {n:"Quinton de Kock", r:"Wicketkeeper", o:true}, {n:"Danish Malewar", r:"Batter", o:false}, {n:"Mohammad Izhar", r:"Batter", o:false}, {n:"Atharva Ankolekar", r:"All-Rounder", o:false}, {n:"Mayank Rawat", r:"All-Rounder", o:false},
@@ -212,9 +212,8 @@
         const tier1 = ["Virat Kohli", "Rohit Sharma", "Jasprit Bumrah", "Hardik Pandya", "Suryakumar Yadav", "Rishabh Pant", "KL Rahul", "Pat Cummins", "Mitchell Starc", "Rashid Khan", "Trent Boult", "Sanju Samson", "Shubman Gill"];
         const tier2 = ["Ruturaj Gaikwad", "Shivam Dube", "Quinton de Kock", "Cameron Green", "Matheesha Pathirana", "Rinku Singh", "Sunil Narine", "Kagiso Rabada"];
 
-        let globalState = null; // Will hold the live Firebase data
+        let globalState = null; 
 
-        // --- GLOBAL UI FUNCTIONS ---
         window.switchTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
@@ -229,6 +228,13 @@
             for (let i = 1; i <= num; i++) {
                 container.innerHTML += `<div class="form-group"><input type="text" id="teamName${i}" value="Franchise ${i}"></div>`;
             }
+        };
+
+        window.showAlert = function(msg) {
+            const alertBox = document.getElementById('globalAlert');
+            alertBox.innerText = msg;
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
         };
 
         // --- FIREBASE WRITE ACTIONS ---
@@ -253,15 +259,20 @@
             let dbTeams = {};
             for (let i = 1; i <= num; i++) {
                 const name = document.getElementById(`teamName${i}`).value || `Franchise ${i}`;
-                dbTeams[name] = { name: name, budget: budget, roster: [] }; // Array will be saved as object in FB
+                dbTeams[name] = { name: name, budget: budget, roster: [] }; 
             }
 
-            // Write initial fresh state to Database
             set(ref(db, '/'), {
                 setup: { isStarted: true, maxPlayers: maxPlayers, budgetMultiplier: multiplier },
                 players: dbPlayers,
                 teams: dbTeams,
                 currentBlock: { active: false }
+            }).then(() => {
+                window.switchTab('auction');
+                window.showAlert("Database Initialized Successfully!");
+            }).catch(error => {
+                window.showAlert("FIREBASE ERROR: Permission Denied. Check your Firebase Rules tab!");
+                console.error(error);
             });
         };
 
@@ -271,7 +282,8 @@
             if (available.length === 0) return alert("No more available players.");
             const p = available[Math.floor(Math.random() * available.length)];
             
-            update(ref(db, '/currentBlock'), { active: true, playerId: p.id, currentBid: p.basePrice });
+            update(ref(db, '/currentBlock'), { active: true, playerId: p.id, currentBid: p.basePrice })
+                .catch(e => window.showAlert("Sync Error: " + e.message));
         };
 
         window.pullSpecificPlayer = function() {
@@ -280,13 +292,15 @@
             if (!id) return;
             const p = globalState.players[id];
             
-            update(ref(db, '/currentBlock'), { active: true, playerId: p.id, currentBid: p.basePrice });
+            update(ref(db, '/currentBlock'), { active: true, playerId: p.id, currentBid: p.basePrice })
+                .catch(e => window.showAlert("Sync Error: " + e.message));
         };
 
         window.addBid = function(increment) {
             if(!globalState || !globalState.currentBlock.active) return;
             let newBid = globalState.currentBlock.currentBid + increment;
-            update(ref(db, '/currentBlock'), { currentBid: newBid });
+            update(ref(db, '/currentBlock'), { currentBid: newBid })
+                .catch(e => window.showAlert("Sync Error: " + e.message));
         };
 
         window.sellPlayer = function() {
@@ -300,7 +314,7 @@
             if(!teamName) return window.showAlert("Please select a winning franchise!");
 
             const team = globalState.teams[teamName];
-            const roster = team.roster || []; // Firebase removes empty arrays
+            const roster = team.roster || []; 
 
             if (team.budget < bidAmount) return window.showAlert(`Insufficient funds! ${teamName} only has ₹${team.budget.toFixed(2)} Cr.`);
             if (roster.length >= globalState.setup.maxPlayers) return window.showAlert(`${teamName} is full.`);
@@ -310,23 +324,16 @@
                 if (osCount >= 8) return window.showAlert(`${teamName} has max 8 overseas players.`);
             }
 
-            // Prepare updates
             let updates = {};
-            
-            // Update Team Roster & Budget
             roster.push({ name: player.name, role: player.role, isOverseas: player.isOverseas, soldPrice: bidAmount });
             updates[`/teams/${teamName}/roster`] = roster;
             updates[`/teams/${teamName}/budget`] = team.budget - bidAmount;
-
-            // Update Player Status
             updates[`/players/${pId}/status`] = 'sold';
             updates[`/players/${pId}/soldTo`] = teamName;
             updates[`/players/${pId}/soldPrice`] = bidAmount;
-
-            // Clear Block
             updates['/currentBlock'] = { active: false, lastAction: `sold_${pId}_${teamName}_${bidAmount}` };
 
-            update(ref(db, '/'), updates);
+            update(ref(db, '/'), updates).catch(e => window.showAlert("Sync Error: " + e.message));
         };
 
         window.markUnsold = function() {
@@ -337,14 +344,7 @@
             updates[`/players/${pId}/status`] = 'unsold';
             updates['/currentBlock'] = { active: false, lastAction: 'unsold' };
             
-            update(ref(db, '/'), updates);
-        };
-
-        window.showAlert = function(msg) {
-            const alertBox = document.getElementById('auctionAlert');
-            alertBox.innerText = msg;
-            alertBox.style.display = 'block';
-            setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+            update(ref(db, '/'), updates).catch(e => window.showAlert("Sync Error: " + e.message));
         };
 
         window.exportCSV = function() {
@@ -367,20 +367,9 @@
 
         onValue(ref(db, '/'), (snapshot) => {
             const data = snapshot.val();
-            if (!data) return; // No data yet
+            if (!data) return; 
             globalState = data;
 
-            // 1. Hide Setup if started
-            if(data.setup && data.setup.isStarted) {
-                document.getElementById('setup-tab').style.display = 'none';
-                document.getElementById('navTabs').style.display = 'flex';
-                // If we are currently on the setup tab, switch to auction
-                if(document.getElementById('setup-tab').classList.contains('active')) {
-                    window.switchTab('auction');
-                }
-            }
-
-            // 2. Render Teams Dropdown & Grid
             if(data.teams) {
                 const teamSelect = document.getElementById('winningTeamSelect');
                 const prevSelected = teamSelect.value;
@@ -390,13 +379,11 @@
                 grid.innerHTML = '';
 
                 Object.values(data.teams).forEach(team => {
-                    // Dropdown
                     let opt = document.createElement('option');
                     opt.value = team.name;
                     opt.textContent = team.name;
                     teamSelect.appendChild(opt);
 
-                    // Grid
                     const roster = team.roster || [];
                     let osCount = roster.filter(p => p.isOverseas).length;
                     let html = `<div class="team-card glass-panel">
@@ -413,10 +400,9 @@
                     html += `</ul></div>`;
                     grid.innerHTML += html;
                 });
-                teamSelect.value = prevSelected; // Restore selection
+                teamSelect.value = prevSelected; 
             }
 
-            // 3. Render Players Dropdown & Ledger Table
             if(data.players) {
                 const select = document.getElementById('manualPlayerSelect');
                 select.innerHTML = '<option value="">-- Search / Pull Specific Player --</option>';
@@ -444,17 +430,14 @@
                 });
             }
 
-            // 4. Render Live Auction Block
             const block = document.getElementById('auctionBlockDisplay');
             const controls = document.getElementById('biddingControls');
             
             if (data.currentBlock && data.currentBlock.active) {
                 const player = data.players[data.currentBlock.playerId];
                 controls.style.display = 'block';
-                document.getElementById('auctionAlert').style.display = 'none';
                 document.getElementById('liveBidText').innerText = `₹${data.currentBlock.currentBid.toFixed(2)}`;
 
-                // Generate Quick Bid Buttons dynamically based on multiplier
                 const m = data.setup.budgetMultiplier;
                 const increments = [0.1 * m, 0.5 * m, 1.0 * m];
                 document.getElementById('quickBidGrid').innerHTML = `
@@ -471,8 +454,6 @@
                 `;
             } else {
                 controls.style.display = 'none';
-                
-                // Show outcome of last action
                 if(data.currentBlock && data.currentBlock.lastAction) {
                     if (data.currentBlock.lastAction === 'unsold') {
                         block.innerHTML = `<h2 style="color: var(--danger); font-size: 2.2rem; margin: 0;">❌ UNSOLD</h2><p style="color: var(--text-muted);">Ready for next player...</p>`;
@@ -488,7 +469,6 @@
             }
         });
 
-        // Initialize UI on load
         window.generateTeamInputs();
 
     </script>
